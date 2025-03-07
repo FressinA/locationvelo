@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Selection</title>
+    <script defer src="script.js"></script>
+    <style>
+        .qr-container { display: flex; gap: 10px; flex-wrap: wrap; }
+        .qr-code { cursor: pointer; border: 2px solid transparent; padding: 5px; }
+        .selected { border: 2px solid green; }
+    </style>
+</head>
+<body>
+    <h2>Sélectionnez les QR Codes</h2>
+    <div class="qr-container">
+        <img src="qr1.png" class="qr-code" data-id="1">
+        <img src="qr2.png" class="qr-code" data-id="2">
+        <img src="qr3.png" class="qr-code" data-id="3">
+    </div>
+    <button id="submit">Envoyer en BDD</button>
+</body>
+</html>
