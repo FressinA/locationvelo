@@ -10,9 +10,13 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap">    
 </head>
 <body>
+    <div class="top-right-buttons">
+        <button id="save">Enregistrer</button>
+        <button id="print">Imprimer</button>
+    </div>
     <h2>Sélectionnez les QR Codes</h2>
     <div class="qr-container">
         <select id="qr-select" multiple>
@@ -20,12 +24,26 @@
             <option value="2">QR Code 2</option>
             <option value="3">QR Code 3</option>
         </select>
+        <img id="qr-image" src="qr1.png" alt="QR Code Image">
     </div>
-    <button id="add-qr">Ajouter QR Code</button>
-    <button id="remove-qr">Supprimer QR Code</button>
-    <button id="submit">Envoyer en BDD</button>
+    <div class="button-container">
+        <button id="add-qr">Ajouter QR Code</button>
+        <button id="remove-qr">Supprimer QR Code</button>
+        <button id="submit">Envoyer en BDD</button>
+    </div>
 
     <script>
+        const qrImages = {
+            1: 'qr1.png',
+            2: 'qr2.png',
+            3: 'qr3.png'
+        };
+
+        document.getElementById('qr-select').addEventListener('change', function() {
+            const selectedValue = this.value;
+            document.getElementById('qr-image').src = qrImages[selectedValue] || 'default.png';
+        });
+
         document.getElementById('add-qr').addEventListener('click', function() {
             const qrSelect = document.getElementById('qr-select');
             const newOption = document.createElement('option');
@@ -33,11 +51,27 @@
             newOption.value = newValue;
             newOption.text = 'QR Code ' + newValue;
             qrSelect.add(newOption);
+            qrImages[newValue] = 'qr' + newValue + '.png'; // Add new image path
         });
 
         document.getElementById('remove-qr').addEventListener('click', function() {
             const qrSelect = document.getElementById('qr-select');
-            qrSelect.remove(qrSelect.selectedIndex);
+            if (qrSelect.selectedIndex !== -1) {
+                delete qrImages[qrSelect.value]; // Remove image path
+                qrSelect.remove(qrSelect.selectedIndex);
+                document.getElementById('qr-image').src = 'default.png'; // Reset image
+            } else {
+                alert('Veuillez sélectionner un QR Code à supprimer.');
+            }
+        });
+
+        document.getElementById('save').addEventListener('click', function() {
+            alert('Enregistrer les QR Codes sélectionnés.');
+            // Ajoutez ici la logique pour enregistrer les QR Codes
+        });
+
+        document.getElementById('print').addEventListener('click', function() {
+            window.print();
         });
     </script>
 </body>

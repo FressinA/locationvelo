@@ -93,3 +93,43 @@ button {
 button:hover {
     background-color: #0056b3;
 }
+
+.top-right-buttons {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+.top-right-buttons button {
+    margin-left: 10px;
+}
+
+.top-right-buttons {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+.top-right-buttons button {
+    margin-left: 10px;
+}
+.qr-container img {
+    display: block;
+    margin: 10px 0;
+}
+
+.top-right-buttons {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+.top-right-buttons button {
+    margin-left: 10px;
+}
+.button-container {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+.qr-container img {
+    display: block;
+    margin: 10px 0;
+}
