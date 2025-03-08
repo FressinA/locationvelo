@@ -33,16 +33,30 @@ app.post("/save_qr", async (req, res) => {
     const { qrCodes } = req.body;
 
     if (!Array.isArray(qrCodes) || qrCodes.length === 0) {
-        return res.status(400).json({ error: "❌ Données invalides" });
+        return res.status(400).json({ error: "❌ Données invalides. Veuillez envoyer une liste de QR codes." });
     }
 
-    const query = "INSERT INTO qr_codes (qr_id) VALUES ?";
-    const values = qrCodes.map(id => [id]);
-
     try {
+        if (!db) await connectDB(); // Vérifie que la connexion est active
+
+        // Vérifier si un QR code existe déjà
+        const [existing] = await db.query("SELECT qr_id FROM qr_codes WHERE qr_id IN (?)", [qrCodes]);
+        const existingIds = new Set(existing.map(row => row.qr_id));
+
+        // Filtrer les QR codes qui ne sont pas encore en BDD
+        const newQRCodes = qrCodes.filter(id => !existingIds.has(id));
+
+        if (newQRCodes.length === 0) {
+            return res.status(409).json({ error: "❌ Tous les QR codes existent déjà en BDD." });
+        }
+
+        const query = "INSERT INTO qr_codes (qr_id) VALUES ?";
+        const values = newQRCodes.map(id => [id]);
+
         const [result] = await db.query(query, [values]);
         console.log("✅ QR Codes enregistrés :", result);
-        res.json({ success: "✅ QR Codes enregistrés !" });
+        res.json({ success: `✅ ${result.affectedRows} QR Code(s) enregistré(s) !` });
+
     } catch (err) {
         console.error("❌ Erreur lors de l'insertion :", err);
         res.status(500).json({ error: "❌ Erreur serveur" });
@@ -52,6 +66,8 @@ app.post("/save_qr", async (req, res) => {
 // ✅ Route pour récupérer les vélos
 app.get("/velos", async (req, res) => {
     try {
+        if (!db) await connectDB(); // Vérifie que la connexion est active
+
         const [results] = await db.query("SELECT * FROM velos");
         console.log("✅ Données des vélos envoyées :", results.length);
         res.json(results);
