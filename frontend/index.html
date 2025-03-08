@@ -21,6 +21,24 @@
             <option value="3">QR Code 3</option>
         </select>
     </div>
+    <button id="add-qr">Ajouter QR Code</button>
+    <button id="remove-qr">Supprimer QR Code</button>
     <button id="submit">Envoyer en BDD</button>
+
+    <script>
+        document.getElementById('add-qr').addEventListener('click', function() {
+            const qrSelect = document.getElementById('qr-select');
+            const newOption = document.createElement('option');
+            const newValue = qrSelect.options.length + 1;
+            newOption.value = newValue;
+            newOption.text = 'QR Code ' + newValue;
+            qrSelect.add(newOption);
+        });
+
+        document.getElementById('remove-qr').addEventListener('click', function() {
+            const qrSelect = document.getElementById('qr-select');
+            qrSelect.remove(qrSelect.selectedIndex);
+        });
+    </script>
 </body>
 </html>
