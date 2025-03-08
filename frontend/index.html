@@ -4,15 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Selection</title>
-    <script defer src="qrcode.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script defer src="script.js"></script>
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap">
-    
 </head>
 <body>
     <div class="top-right-buttons">
@@ -21,12 +15,8 @@
     </div>
     <h2>Sélectionnez les QR Codes</h2>
     <div class="qr-container">
-        <select id="qr-select" multiple>
-            <option value="1">QR Code 1</option>
-            <option value="2">QR Code 2</option>
-            <option value="3">QR Code 3</option>
-        </select>
-        <img id="qr-image" src="qr1.png" alt="QR Code Image">
+        <select id="qr-select" multiple></select>
+        <div id="qr-display"></div>
     </div>
     <div class="button-container">
         <button id="add-qr">Ajouter QR Code</button>
@@ -35,41 +25,64 @@
     </div>
 
     <script>
-        const qrImages = {
-            1: 'https://example.com/qr1.png', // Replace with actual image URL
-            2: 'https://example.com/qr2.png', // Replace with actual image URL
-            3: 'https://example.com/qr3.png'  // Replace with actual image URL
-        };
+        const qrSelect = document.getElementById('qr-select');
+        const qrDisplay = document.getElementById('qr-display');
+        let qrData = {};
 
-        document.getElementById('qr-select').addEventListener('change', function() {
-            const selectedValue = this.value;
-            document.getElementById('qr-image').src = qrImages[selectedValue] || 'default.png';
-        });
+        function generateQRCode(id, data) {
+            const div = document.createElement('div');
+            div.id = `qr-${id}`;
+            div.classList.add('qr-item');
+            new QRCode(div, {
+                text: data,
+                width: 128,
+                height: 128
+            });
+            return div;
+        }
+
+        function updateQRCodeDisplay() {
+            qrDisplay.innerHTML = "";
+            const selectedValues = Array.from(qrSelect.selectedOptions).map(opt => opt.value);
+            selectedValues.forEach(id => {
+                if (qrData[id]) {
+                    qrDisplay.appendChild(generateQRCode(id, qrData[id]));
+                }
+            });
+        }
 
         document.getElementById('add-qr').addEventListener('click', function() {
-            const qrSelect = document.getElementById('qr-select');
-            const newOption = document.createElement('option');
-            const newValue = qrSelect.options.length + 1;
-            newOption.value = newValue;
-            newOption.text = 'QR Code ' + newValue;
-            qrSelect.add(newOption);
-            qrImages[newValue] = 'https://example.com/qr' + newValue + '.png'; // Add new image URL
+            const newId = Object.keys(qrData).length + 1;
+            qrData[newId] = `https://192.168.1.241:3000/velo/${newId}`;
+            const option = document.createElement('option');
+            option.value = newId;
+            option.text = `QR Code ${newId}`;
+            qrSelect.add(option);
         });
 
         document.getElementById('remove-qr').addEventListener('click', function() {
-            const qrSelect = document.getElementById('qr-select');
             if (qrSelect.selectedIndex !== -1) {
-                delete qrImages[qrSelect.value]; // Remove image URL
+                delete qrData[qrSelect.value];
                 qrSelect.remove(qrSelect.selectedIndex);
-                document.getElementById('qr-image').src = 'default.png'; // Reset image
+                updateQRCodeDisplay();
             } else {
-                alert('Veuillez sélectionner un QR Code à supprimer.');
+                alert('Sélectionnez un QR Code à supprimer.');
             }
         });
 
+        document.getElementById('qr-select').addEventListener('change', updateQRCodeDisplay);
+
         document.getElementById('save').addEventListener('click', function() {
-            alert('Enregistrer les QR Codes sélectionnés.');
-            // Ajoutez ici la logique pour enregistrer les QR Codes
+            localStorage.setItem('qrData', JSON.stringify(qrData));
+            alert('QR Codes enregistrés localement.');
+        });
+
+        document.getElementById('submit').addEventListener('click', function() {
+            fetch('/save-qr-codes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(qrData)
+            }).then(res => res.json()).then(data => alert('QR Codes enregistrés !')).catch(err => console.error(err));
         });
 
         document.getElementById('print').addEventListener('click', function() {

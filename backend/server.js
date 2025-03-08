@@ -1,5 +1,5 @@
 const express = require("express");
-const mysql = require("mysql2/promise"); // Utilisation de mysql2 en mode async
+const mysql = require("mysql2/promise");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 
@@ -7,14 +7,15 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Connexion à la base de données MySQL
+// Configuration de la base de données
 const dbConfig = {
     host: "localhost",
-    user: "alexandre",  // Mets ton utilisateur MySQL
-    password: "alexandre",   // Mets ton mot de passe MySQL
+    user: "alexandre",
+    password: "alexandre",
     database: "qr_code_db"
 };
 
+// Fonction pour établir la connexion MySQL
 let db;
 async function connectDB() {
     try {
@@ -22,12 +23,12 @@ async function connectDB() {
         console.log("✅ Connecté à la base de données MySQL");
     } catch (err) {
         console.error("❌ Erreur de connexion à MySQL:", err);
-        process.exit(1); // Arrêter le serveur en cas d'erreur de connexion
+        setTimeout(connectDB, 5000); // Tente une reconnexion après 5 secondes
     }
 }
 connectDB();
 
-// Route pour enregistrer les QR codes en BDD
+// ✅ Route pour enregistrer les QR codes en BDD
 app.post("/save_qr", async (req, res) => {
     const { qrCodes } = req.body;
 
@@ -48,7 +49,7 @@ app.post("/save_qr", async (req, res) => {
     }
 });
 
-// Route pour obtenir les vélos
+// ✅ Route pour récupérer les vélos
 app.get("/velos", async (req, res) => {
     try {
         const [results] = await db.query("SELECT * FROM velos");
@@ -60,12 +61,13 @@ app.get("/velos", async (req, res) => {
     }
 });
 
-// Démarrage du serveur
+// ✅ Page d'accueil pour tester si le serveur fonctionne
+app.get("/", (req, res) => {
+    res.send("✅ Serveur Node.js fonctionne !");
+});
+
+// ✅ Démarrage du serveur sur l'adresse IP locale
 const PORT = 3000;
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Serveur backend lancé sur http://192.168.1.241:${PORT}`);
-});
-
-app.get("/", (req, res) => {
-    res.send("✅ Serveur Node.js fonctionne !");
 });
