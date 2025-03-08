@@ -60,4 +60,54 @@ document.addEventListener("DOMContentLoaded", () => {
             alert('Une erreur est survenue lors de l\'envoi des QR Codes.');
         });
     });
+
+    const qrImages = {
+        1: 'https://example.com/qr1.png', // Replace with actual image URL
+        2: 'https://example.com/qr2.png', // Replace with actual image URL
+        3: 'https://example.com/qr3.png'  // Replace with actual image URL
+    };
+
+    document.getElementById('qr-select').addEventListener('change', function() {
+        const selectedValue = this.value;
+        document.getElementById('qr-image').src = qrImages[selectedValue] || 'default.png';
+    });
+
+    document.getElementById('add-qr').addEventListener('click', function() {
+        const qrSelect = document.getElementById('qr-select');
+        const newOption = document.createElement('option');
+        const newValue = qrSelect.options.length + 1;
+        newOption.value = newValue;
+        newOption.text = 'QR Code ' + newValue;
+        qrSelect.add(newOption);
+        qrImages[newValue] = generateQRCode('QR Code ' + newValue); // Generate new QR code
+    });
+
+    document.getElementById('remove-qr').addEventListener('click', function() {
+        const qrSelect = document.getElementById('qr-select');
+        if (qrSelect.selectedIndex !== -1) {
+            delete qrImages[qrSelect.value]; // Remove image URL
+            qrSelect.remove(qrSelect.selectedIndex);
+            document.getElementById('qr-image').src = 'default.png'; // Reset image
+        } else {
+            alert('Veuillez sélectionner un QR Code à supprimer.');
+        }
+    });
+
+    document.getElementById('save').addEventListener('click', function() {
+        alert('Enregistrer les QR Codes sélectionnés.');
+        // Ajoutez ici la logique pour enregistrer les QR Codes
+    });
+
+    document.getElementById('print').addEventListener('click', function() {
+        window.print();
+    });
+
+    function generateQRCode(text) {
+        const qr = new QRCode(document.createElement('div'), {
+            text: text,
+            width: 128,
+            height: 128
+        });
+        return qr._el.childNodes[0].toDataURL();
+    }
 });
