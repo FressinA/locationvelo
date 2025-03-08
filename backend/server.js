@@ -7,7 +7,7 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Configuration de la base de données
+// ✅ Configuration de la base de données
 const dbConfig = {
     host: "localhost",
     user: "alexandre",
@@ -15,7 +15,7 @@ const dbConfig = {
     database: "qr_code_db"
 };
 
-// Fonction pour établir la connexion MySQL
+// ✅ Fonction pour établir la connexion MySQL
 let db;
 async function connectDB() {
     try {
@@ -23,12 +23,12 @@ async function connectDB() {
         console.log("✅ Connecté à la base de données MySQL");
     } catch (err) {
         console.error("❌ Erreur de connexion à MySQL:", err);
-        setTimeout(connectDB, 5000); // Tente une reconnexion après 5 secondes
+        setTimeout(connectDB, 5000); // Tentative de reconnexion après 5 secondes
     }
 }
 connectDB();
 
-// ✅ Route pour enregistrer les QR codes en BDD
+// ✅ Route pour enregistrer des QR codes en BDD
 app.post("/save_qr", async (req, res) => {
     const { qrCodes } = req.body;
 
@@ -37,9 +37,9 @@ app.post("/save_qr", async (req, res) => {
     }
 
     try {
-        if (!db) await connectDB(); // Vérifie que la connexion est active
+        if (!db) await connectDB(); // Vérifie la connexion avant requête
 
-        // Vérifier si un QR code existe déjà
+        // Vérifier si certains QR codes existent déjà
         const [existing] = await db.query("SELECT qr_id FROM qr_codes WHERE qr_id IN (?)", [qrCodes]);
         const existingIds = new Set(existing.map(row => row.qr_id));
 
@@ -63,16 +63,40 @@ app.post("/save_qr", async (req, res) => {
     }
 });
 
-// ✅ Route pour récupérer les vélos
+// ✅ Route pour récupérer la liste des vélos
 app.get("/velos", async (req, res) => {
     try {
-        if (!db) await connectDB(); // Vérifie que la connexion est active
+        if (!db) await connectDB(); // Vérifie la connexion
 
-        const [results] = await db.query("SELECT * FROM velos");
+        const [results] = await db.query("SELECT * FROM velo"); // Correction du nom de la table
         console.log("✅ Données des vélos envoyées :", results.length);
         res.json(results);
     } catch (err) {
         console.error("❌ Erreur lors de la récupération des vélos :", err);
+        res.status(500).json({ error: "❌ Erreur serveur" });
+    }
+});
+
+// ✅ Route pour enregistrer un vélo avec un QR code
+app.post("/save_velo", async (req, res) => {
+    const { nom } = req.body;
+
+    if (!nom) {
+        return res.status(400).json({ error: "❌ Nom du vélo requis" });
+    }
+
+    // Générer un QR code unique pour ce vélo
+    const qrCodeURL = `http://192.168.1.241:3000/velo/${nom.replace(/\s+/g, "_")}`;
+
+    try {
+        if (!db) await connectDB(); // Vérifie la connexion
+
+        const query = "INSERT INTO velo (nom, qr_code) VALUES (?, ?)";
+        const [result] = await db.query(query, [nom, qrCodeURL]);
+        console.log("✅ Vélo enregistré avec QR Code :", result);
+        res.json({ success: "✅ Vélo enregistré avec QR Code !", qr_code: qrCodeURL });
+    } catch (err) {
+        console.error("❌ Erreur lors de l'insertion :", err);
         res.status(500).json({ error: "❌ Erreur serveur" });
     }
 });

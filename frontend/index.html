@@ -13,23 +13,33 @@
         <button id="save">Enregistrer</button>
         <button id="print">Imprimer</button>
     </div>
+
     <h2>Sélectionnez les QR Codes</h2>
     <div class="qr-container">
         <select id="qr-select" multiple></select>
         <div id="qr-display"></div>
     </div>
+
     <div class="button-container">
-        <button id="add-qr">Ajouter QR Code</button>
-        <button id="remove-qr">Supprimer QR Code</button>
-        <button id="submit">Envoyer en BDD</button>
+        <select id="action-select">
+            <option value="add">Ajouter un QR Code</option>
+            <option value="remove">Supprimer un QR Code</option>
+            <option value="submit">Envoyer les QR Codes</option>
+        </select>
+        <button id="manage-qr">Gérer les QR Codes</button>
     </div>
 
+    <input type="text" id="velo-nom" placeholder="Nom du vélo">
+    <button id="add-velo">Ajouter Vélo</button>
+
     <script>
+        const API_URL = "http://192.168.1.241:3000"; // Définir l'URL de l'API
         const qrSelect = document.getElementById('qr-select');
         const qrDisplay = document.getElementById('qr-display');
         let qrData = JSON.parse(localStorage.getItem('qrData')) || {};
         let qrIdCounter = Object.keys(qrData).length ? Math.max(...Object.keys(qrData).map(Number)) + 1 : 1;
 
+        // Fonction pour générer un QR Code
         function generateQRCode(id, data) {
             const div = document.createElement('div');
             div.id = `qr-${id}`;
@@ -42,18 +52,20 @@
             return div;
         }
 
+        // Fonction pour mettre à jour l'affichage des QR Codes
         function updateQRCodeDisplay() {
-            qrDisplay.innerHTML = "";
-            const selectedValues = Array.from(qrSelect.selectedOptions).map(opt => opt.value);
+            qrDisplay.innerHTML = ""; // On vide l'affichage avant de mettre à jour
+            const selectedValues = Array.from(qrSelect.selectedOptions).map(opt => opt.value); // Récupère les IDs des QR Codes sélectionnés
             selectedValues.forEach(id => {
                 if (qrData[id]) {
-                    qrDisplay.appendChild(generateQRCode(id, qrData[id]));
+                    qrDisplay.appendChild(generateQRCode(id, qrData[id])); // Ajoute le QR Code dans l'affichage
                 }
             });
         }
 
+        // Fonction pour mettre à jour la liste des QR Codes dans le select
         function updateSelectOptions() {
-            qrSelect.innerHTML = "";
+            qrSelect.innerHTML = ""; // Vide le select
             Object.keys(qrData).forEach(id => {
                 const option = document.createElement('option');
                 option.value = id;
@@ -62,56 +74,90 @@
             });
         }
 
-        document.getElementById('add-qr').addEventListener('click', function() {
-            const newId = qrIdCounter++;
-            qrData[newId] = `https://mon-site.com/velo/${newId}`;
-            localStorage.setItem('qrData', JSON.stringify(qrData));
-            updateSelectOptions();
-        });
-
-        document.getElementById('remove-qr').addEventListener('click', function() {
-            const selectedOptions = Array.from(qrSelect.selectedOptions);
-            if (selectedOptions.length === 0) {
-                alert('Sélectionnez un QR Code à supprimer.');
-                return;
+        // Gestionnaire pour gérer les QR Codes
+        document.getElementById('manage-qr').addEventListener('click', function() {
+            const action = document.getElementById('action-select').value; // Récupère l'action choisie
+            if (action === 'add') {
+                const newId = qrIdCounter++; // Crée un nouvel ID
+                qrData[newId] = `${API_URL}/velo/${newId}`; // Enregistre l'URL pour le QR code
+                localStorage.setItem('qrData', JSON.stringify(qrData)); // Sauvegarde dans le localStorage
+                updateSelectOptions(); // Met à jour les options dans le menu déroulant
+                alert('QR Code ajouté avec succès');
+            } else if (action === 'remove') {
+                const selectedOptions = Array.from(qrSelect.selectedOptions);
+                if (selectedOptions.length === 0) {
+                    alert('Sélectionnez un QR Code à supprimer.');
+                    return;
+                }
+                selectedOptions.forEach(option => {
+                    delete qrData[option.value];
+                    option.remove();
+                });
+                localStorage.setItem('qrData', JSON.stringify(qrData)); // Sauvegarde après suppression
+                updateQRCodeDisplay();
+                alert('QR Code(s) supprimé(s)');
+            } else if (action === 'submit') {
+                const qrArray = Object.keys(qrData);
+                if (qrArray.length === 0) {
+                    alert("Aucun QR Code à envoyer.");
+                    return;
+                }
+                fetch(`${API_URL}/save_qr`, { // Correction de la route pour correspondre au backend
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ qrCodes: qrArray })
+                })
+                .then(res => res.json())
+                .then(data => alert(data.success || data.error))
+                .catch(err => console.error('Erreur lors de l\'envoi des QR Codes:', err));
             }
-            selectedOptions.forEach(option => {
-                delete qrData[option.value];
-                option.remove();
-            });
-            localStorage.setItem('qrData', JSON.stringify(qrData));
-            updateQRCodeDisplay();
         });
 
-        document.getElementById('qr-select').addEventListener('change', updateQRCodeDisplay);
-
+        // Sauvegarde des QR Codes localement
         document.getElementById('save').addEventListener('click', function() {
             localStorage.setItem('qrData', JSON.stringify(qrData));
             alert('QR Codes enregistrés localement.');
         });
 
-        document.getElementById('submit').addEventListener('click', function() {
-            const qrArray = Object.keys(qrData);
-            if (qrArray.length === 0) {
-                alert("Aucun QR Code à envoyer.");
-                return;
-            }
-            fetch('/save_qr', { // Correction de la route pour correspondre au backend
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ qrCodes: qrArray })
-            })
-            .then(res => res.json())
-            .then(data => alert(data.success || data.error))
-            .catch(err => console.error(err));
-        });
-
+        // Fonction pour imprimer les QR Codes
         document.getElementById('print').addEventListener('click', function() {
             window.print();
         });
 
-        // Restauration des QR codes au chargement
+        // Ajout d'un vélo avec QR Code
+        document.getElementById('add-velo').addEventListener('click', () => {
+            const nomVelo = document.getElementById('velo-nom').value.trim();
+            if (!nomVelo) {
+                alert("Veuillez entrer un nom de vélo.");
+                return;
+            }
+
+            fetch(`${API_URL}/save_velo`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nom: nomVelo })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.success || data.error);
+                if (data.success) {
+                    // Rafraîchir la liste des vélos après ajout
+                    console.log("QR Code généré :", data.qr_code);
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                alert('Une erreur est survenue lors de l\'ajout du vélo.');
+            });
+
+            document.getElementById('velo-nom').value = ""; // Réinitialiser le champ de texte
+        });
+
+        // Restauration des QR codes au chargement de la page
         updateSelectOptions();
+
+        // Met à jour l'affichage quand l'utilisateur change la sélection de QR Codes
+        qrSelect.addEventListener('change', updateQRCodeDisplay);
     </script>
 </body>
 </html>
